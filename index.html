@@ -255,40 +255,24 @@
 
     
     .wheel-card{
-      position: relative;
-      overflow: hidden;
-      background: #191d3a;
-      isolation: isolate;
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(rgba(10,12,30,.45),rgba(10,12,30,.65)),
+        url("background.png") center 22%/cover no-repeat;
     }
 
-    .wheel-bg{
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center 22%;
-      z-index: 0;
-      opacity: .72;
-      filter: blur(1px);
-      transform: scale(1.02);
-      pointer-events: none;
-    }
-
-    .wheel-overlay{
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      background: linear-gradient(
-        rgba(10,12,30,.30),
-        rgba(10,12,30,.58)
-      );
-      pointer-events: none;
+    .wheel-card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      backdrop-filter: blur(2px);
+      z-index:0;
     }
 
     .wheel-wrap,.result{
-      position: relative;
-      z-index: 2;
+      position:relative;
+      z-index:2;
     }
 
     canvas{
@@ -309,6 +293,151 @@
       .pointer { top: 8px; }
       .center-button { width: 92px; height: 92px; font-size: 17px; }
     }
+
+    /* 선물용 배치: 사진의 얼굴과 상체가 잘 보이도록 룰렛을 왼쪽 아래에 작게 배치 */
+    .wheel-card {
+      min-height: 760px;
+      padding: 24px;
+    }
+
+    .wheel-bg {
+      object-position: center 20%;
+      opacity: .82;
+      filter: none;
+      transform: scale(1.01);
+    }
+
+    .wheel-overlay {
+      background:
+        linear-gradient(
+          90deg,
+          rgba(8,10,26,.22) 0%,
+          rgba(8,10,26,.10) 48%,
+          rgba(8,10,26,.18) 100%
+        ),
+        linear-gradient(
+          0deg,
+          rgba(8,10,26,.48) 0%,
+          rgba(8,10,26,.08) 52%,
+          rgba(8,10,26,.16) 100%
+        );
+    }
+
+    .wheel-wrap {
+      position: absolute;
+      left: 30px;
+      bottom: 120px;
+      width: 390px;
+      min-height: 390px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      z-index: 2;
+    }
+
+    .wheel-wrap canvas {
+      width: 380px;
+      height: 380px;
+      max-width: 100%;
+    }
+
+    .wheel-wrap .center-button {
+      width: 82px;
+      height: 82px;
+      border-width: 6px;
+      font-size: 17px;
+    }
+
+    .wheel-wrap .pointer {
+      top: -4px;
+      border-left-width: 15px;
+      border-right-width: 15px;
+      border-top-width: 32px;
+    }
+
+    .wheel-card .result {
+      position: absolute;
+      left: 30px;
+      bottom: 26px;
+      width: 390px;
+      min-height: 72px;
+      margin: 0;
+      padding: 14px 16px;
+      font-size: 25px;
+      background: rgba(17,20,43,.76);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(8px);
+      z-index: 3;
+    }
+
+    @media (max-width: 900px) {
+      .wheel-card {
+        min-height: 720px;
+      }
+
+      .wheel-wrap {
+        left: 22px;
+        bottom: 118px;
+        width: 350px;
+        min-height: 350px;
+      }
+
+      .wheel-wrap canvas {
+        width: 340px;
+        height: 340px;
+      }
+
+      .wheel-card .result {
+        left: 22px;
+        width: 350px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .wheel-card {
+        min-height: 630px;
+        padding: 12px;
+      }
+
+      .wheel-bg {
+        object-position: 58% 18%;
+      }
+
+      .wheel-wrap {
+        left: 14px;
+        bottom: 104px;
+        width: 270px;
+        min-height: 270px;
+      }
+
+      .wheel-wrap canvas {
+        width: 260px;
+        height: 260px;
+      }
+
+      .wheel-wrap .center-button {
+        width: 66px;
+        height: 66px;
+        border-width: 5px;
+        font-size: 14px;
+      }
+
+      .wheel-wrap .pointer {
+        top: -2px;
+        border-left-width: 12px;
+        border-right-width: 12px;
+        border-top-width: 26px;
+      }
+
+      .wheel-card .result {
+        left: 14px;
+        bottom: 18px;
+        width: 270px;
+        min-height: 64px;
+        font-size: 20px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -318,8 +447,6 @@
 
     <section class="layout">
       <div class="card wheel-card">
-        <img class="wheel-bg" src="./background.png?v=3" alt="" />
-        <div class="wheel-overlay"></div>
         <div class="wheel-wrap">
           <div class="pointer"></div>
           <canvas id="wheel" width="800" height="800" aria-label="룰렛"></canvas>
