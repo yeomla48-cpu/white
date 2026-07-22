@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>룰렛 TTS</title>
+  <style>
+    :root {
+      --bg: #0f1226;
+      --panel: #191d3a;
+      --text: #f7f7ff;
+      --muted: #aeb4d4;
+      --accent: #ff6fae;
+      --accent2: #7c8cff;
+      --danger: #ff5b6e;
+      --success: #57d38c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Pretendard, "Noto Sans KR", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(124,140,255,.18), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(255,111,174,.18), transparent 35%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 5vw, 48px);
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(320px, 420px);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card {
+      background: rgba(25,29,58,.92);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+      padding: 22px;
+      backdrop-filter: blur(12px);
+    }
+
+    .wheel-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 560px;
+    }
+
+    .pointer {
+      position: absolute;
+      top: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 42px solid #fff;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,.35));
+      z-index: 5;
+    }
+
+    canvas {
+      width: min(520px, 92vw);
+      height: min(520px, 92vw);
+      max-width: 100%;
+      border-radius: 50%;
+      filter: drop-shadow(0 18px 28px rgba(0,0,0,.35));
+      transition: transform 4.8s cubic-bezier(.12,.72,.08,1);
+    }
+
+    .center-button {
+      position: absolute;
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      border: 8px solid rgba(255,255,255,.85);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(0,0,0,.3);
+      z-index: 4;
+    }
+
+    .center-button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .result {
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.06);
+      text-align: center;
+      min-height: 82px;
+      display: grid;
+      place-items: center;
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 900;
+      word-break: keep-all;
+    }
+
+    .panel-title {
+      font-size: 20px;
+      margin: 0 0 14px;
+    }
+
+    .inputs {
+      display: grid;
+      gap: 10px;
+      max-height: 430px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 34px 1fr 40px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .num {
+      color: var(--muted);
+      font-weight: 700;
+      text-align: center;
+    }
+
+    input[type="text"], select, input[type="range"] {
+      width: 100%;
+    }
+
+    input[type="text"], select {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.07);
+      color: white;
+      border-radius: 12px;
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(124,140,255,.15);
+    }
+
+    option { color: #111; }
+
+    .remove-btn, .small-btn {
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .remove-btn {
+      height: 40px;
+      background: rgba(255,91,110,.14);
+      color: #ff92a0;
+      font-size: 18px;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .small-btn {
+      padding: 12px 14px;
+      color: white;
+      background: rgba(124,140,255,.2);
+    }
+
+    .small-btn.primary {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+    }
+
+    .settings {
+      margin-top: 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .setting {
+      display: grid;
+      gap: 7px;
+    }
+
+    .setting label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .notice {
+      margin-top: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .history {
+      margin-top: 18px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(87,211,140,.12);
+      color: #8df0b6;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    
+    .wheel-card{
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(rgba(10,12,30,.45),rgba(10,12,30,.65)),
+        url("background.png") center 22%/cover no-repeat;
+    }
+
+    .wheel-card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      backdrop-filter: blur(2px);
+      z-index:0;
+    }
+
+    .wheel-wrap,.result{
+      position:relative;
+      z-index:2;
+    }
+
+    canvas{
+      filter:
+        drop-shadow(0 18px 28px rgba(0,0,0,.45))
+        drop-shadow(0 0 16px rgba(255,255,255,.18));
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .wheel-wrap { min-height: 460px; }
+    }
+
+    @media (max-width: 520px) {
+      .app { padding: 14px; }
+      .card { border-radius: 18px; padding: 14px; }
+      .wheel-wrap { min-height: 390px; }
+      .pointer { top: 8px; }
+      .center-button { width: 92px; height: 92px; font-size: 17px; }
+    }
+
+    /* 선물용 배치: 사진의 얼굴과 상체가 잘 보이도록 룰렛을 왼쪽 아래에 작게 배치 */
+    .wheel-card {
+      min-height: 760px;
+      padding: 24px;
+    }
+
+    .wheel-bg {
+      object-position: center 20%;
+      opacity: .82;
+      filter: none;
+      transform: scale(1.01);
+    }
+
+    .wheel-overlay {
+      background:
+        linear-gradient(
+          90deg,
+          rgba(8,10,26,.22) 0%,
+          rgba(8,10,26,.10) 48%,
+          rgba(8,10,26,.18) 100%
+        ),
+        linear-gradient(
+          0deg,
+          rgba(8,10,26,.48) 0%,
+          rgba(8,10,26,.08) 52%,
+          rgba(8,10,26,.16) 100%
+        );
+    }
+
+    .wheel-wrap {
+      position: absolute;
+      left: 30px;
+      bottom: 120px;
+      width: 390px;
+      min-height: 390px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      z-index: 2;
+    }
+
+    .wheel-wrap canvas {
+      width: 380px;
+      height: 380px;
+      max-width: 100%;
+    }
+
+    .wheel-wrap .center-button {
+      width: 82px;
+      height: 82px;
+      border-width: 6px;
+      font-size: 17px;
+    }
+
+    .wheel-wrap .pointer {
+      top: -4px;
+      border-left-width: 15px;
+      border-right-width: 15px;
+      border-top-width: 32px;
+    }
+
+    .wheel-card .result {
+      position: absolute;
+      left: 30px;
+      bottom: 26px;
+      width: 390px;
+      min-height: 72px;
+      margin: 0;
+      padding: 14px 16px;
+      font-size: 25px;
+      background: rgba(17,20,43,.76);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(8px);
+      z-index: 3;
+    }
+
+    @media (max-width: 900px) {
+      .wheel-card {
+        min-height: 720px;
+      }
+
+      .wheel-wrap {
+        left: 22px;
+        bottom: 118px;
+        width: 350px;
+        min-height: 350px;
+      }
+
+      .wheel-wrap canvas {
+        width: 340px;
+        height: 340px;
+      }
+
+      .wheel-card .result {
+        left: 22px;
+        width: 350px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .wheel-card {
+        min-height: 630px;
+        padding: 12px;
+      }
+
+      .wheel-bg {
+        object-position: 58% 18%;
+      }
+
+      .wheel-wrap {
+        left: 14px;
+        bottom: 104px;
+        width: 270px;
+        min-height: 270px;
+      }
+
+      .wheel-wrap canvas {
+        width: 260px;
+        height: 260px;
+      }
+
+      .wheel-wrap .center-button {
+        width: 66px;
+        height: 66px;
+        border-width: 5px;
+        font-size: 14px;
+      }
+
+      .wheel-wrap .pointer {
+        top: -2px;
+        border-left-width: 12px;
+        border-right-width: 12px;
+        border-top-width: 26px;
+      }
+
+      .wheel-card .result {
+        left: 14px;
+        bottom: 18px;
+        width: 270px;
+        min-height: 64px;
+        font-size: 20px;
+      }
+    }
+
+
+    /* 화이트 로즈 파스텔 테마 */
+    :root {
+      --accent: #D8B8C6;
+      --accent2: #B8B0D3;
+    }
+
+    .wheel-card .center-button {
+      background: linear-gradient(135deg, #D8B8C6, #B8B0D3) !important;
+      color: #ffffff !important;
+      border-color: rgba(255,255,255,.90) !important;
+      box-shadow:
+        0 9px 22px rgba(77,66,84,.24),
+        0 0 18px rgba(255,255,255,.20) !important;
+    }
+
+    .wheel-card .pointer {
+      border-top-color: #F8F3F1 !important;
+      filter: drop-shadow(0 5px 7px rgba(70,60,75,.30)) !important;
+    }
+
+    .wheel-card .wheel-wrap canvas {
+      filter:
+        drop-shadow(0 14px 22px rgba(65,56,70,.28))
+        drop-shadow(0 0 14px rgba(255,255,255,.20)) !important;
+    }
+
+    .wheel-card .result {
+      color: #514953 !important;
+      background: rgba(246,240,237,.82) !important;
+      border: 1px solid rgba(255,255,255,.64) !important;
+      box-shadow: 0 8px 22px rgba(70,60,75,.14);
+      text-shadow: 0 1px 0 rgba(255,255,255,.65);
+    }
+
+    .wheel-overlay {
+      background:
+        linear-gradient(
+          90deg,
+          rgba(65,52,68,.10),
+          rgba(65,52,68,.02) 52%,
+          rgba(65,52,68,.08)
+        ),
+        linear-gradient(
+          0deg,
+          rgba(65,52,68,.28),
+          rgba(65,52,68,.01) 55%,
+          rgba(65,52,68,.05)
+        ) !important;
+    }
+
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>🎡 룰렛 TTS</h1>
+    <div class="subtitle">항목을 직접 입력하고, 돌린 결과를 음성으로 들어보세요.</div>
+
+    <section class="layout">
+      <div class="card wheel-card">
+        <div class="wheel-wrap">
+          <div class="pointer"></div>
+          <canvas id="wheel" width="800" height="800" aria-label="룰렛"></canvas>
+          <button id="spinBtn" class="center-button">돌리기</button>
+        </div>
+        <div id="result" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+
+      <aside class="card">
+        <h2 class="panel-title">룰렛 항목</h2>
+        <div id="inputs" class="inputs"></div>
+
+        <div class="button-row">
+          <button id="addBtn" class="small-btn">+ 항목 추가</button>
+          <button id="applyBtn" class="small-btn primary">룰렛 적용</button>
+        </div>
+
+        <div class="settings">
+          <div class="setting">
+            <label for="voiceSelect">TTS 목소리</label>
+            <select id="voiceSelect"></select>
+          </div>
+
+          <div class="button-row">
+            <button id="testVoiceBtn" class="small-btn">🔊 음성 테스트</button>
+            <button id="reloadVoicesBtn" class="small-btn">목소리 새로고침</button>
+          </div>
+
+          <div class="setting">
+            <label for="speechText">읽어줄 문장</label>
+            <input id="speechText" type="text" value="당첨 결과는 {결과}입니다!" />
+          </div>
+
+          <div class="setting">
+            <label for="rate">말하기 속도: <span id="rateValue">1.0</span></label>
+            <input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1.0" />
+          </div>
+
+          <div class="toggle">
+            <input id="ttsEnabled" type="checkbox" checked />
+            <label for="ttsEnabled">결과를 TTS로 읽기</label>
+          </div>
+        </div>
+
+        <div class="notice">
+          브라우저 기본 음성을 사용합니다. 크롬이나 엣지에서 한국어 음성이 가장 잘 작동합니다.
+          나중에 허락받은 커스텀 AI 음성 API도 연결할 수 있습니다.
+        </div>
+
+        <div class="history">
+          <h3 class="panel-title">최근 결과</h3>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spinBtn");
+    const resultEl = document.getElementById("result");
+    const inputsEl = document.getElementById("inputs");
+    const addBtn = document.getElementById("addBtn");
+    const applyBtn = document.getElementById("applyBtn");
+    const voiceSelect = document.getElementById("voiceSelect");
+    const speechText = document.getElementById("speechText");
+    const rate = document.getElementById("rate");
+    const rateValue = document.getElementById("rateValue");
+    const ttsEnabled = document.getElementById("ttsEnabled");
+    const historyList = document.getElementById("historyList");
+    const testVoiceBtn = document.getElementById("testVoiceBtn");
+    const reloadVoicesBtn = document.getElementById("reloadVoicesBtn");
+
+    const colors = [
+      "#E7D7DB", "#D9D3E8", "#D7E2EC", "#EEDFD2", "#DCE7E1",
+      "#EBD6E0", "#D6D5E5", "#EFE5DC", "#D9E4E1", "#E4DCEC"
+    ];
+
+    let items = [
+      "노래 한 곡", "애교 10초", "닉네임 불러주기", "다시 돌리기",
+      "꽝", "감사 인사", "미션 성공", "랜덤 멘트", "박수", "축하합니다"
+    ];
+
+    let rotation = 0;
+    let spinning = false;
+    let history = [];
+    let voices = [];
+
+    const STORAGE_KEY = "rouletteTtsSettingsV1";
+
+    function saveSettings() {
+      const inputValues = [...inputsEl.querySelectorAll('input[type="text"]')]
+        .map(input => input.value);
+
+      const selectedVoice = voices[Number(voiceSelect.value)];
+
+      const data = {
+        items: inputValues,
+        speechText: speechText.value,
+        rate: rate.value,
+        ttsEnabled: ttsEnabled.checked,
+        selectedVoiceName: selectedVoice ? selectedVoice.name : "",
+        history
+      };
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadSettings() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return null;
+
+        const data = JSON.parse(saved);
+
+        if (Array.isArray(data.items)) {
+          const savedItems = data.items
+            .map(item => String(item ?? ""))
+            .slice(0, 10);
+
+          if (savedItems.length >= 2) {
+            items = savedItems;
+          }
+        }
+
+        if (typeof data.speechText === "string") {
+          speechText.value = data.speechText;
+        }
+
+        if (data.rate !== undefined) {
+          rate.value = String(data.rate);
+          rateValue.textContent = Number(rate.value).toFixed(1);
+        }
+
+        if (typeof data.ttsEnabled === "boolean") {
+          ttsEnabled.checked = data.ttsEnabled;
+        }
+
+        if (Array.isArray(data.history)) {
+          history = data.history.slice(0, 8);
+        }
+
+        return data;
+      } catch (error) {
+        console.warn("저장된 설정을 불러오지 못했습니다.", error);
+        return null;
+      }
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = "";
+      history.forEach(item => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = item;
+        historyList.appendChild(chip);
+      });
+    }
+
+    function createInputRow(value = "") {
+      const row = document.createElement("div");
+      row.className = "input-row";
+
+      const num = document.createElement("div");
+      num.className = "num";
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.maxLength = 30;
+      input.value = value;
+      input.placeholder = "룰렛 항목 입력";
+
+      const remove = document.createElement("button");
+      remove.className = "remove-btn";
+      remove.textContent = "×";
+      remove.title = "삭제";
+      remove.addEventListener("click", () => {
+        if (inputsEl.children.length <= 2) {
+          alert("룰렛은 최소 2칸이 필요해요.");
+          return;
+        }
+        row.remove();
+        renumberRows();
+        saveSettings();
+      });
+
+      row.append(num, input, remove);
+      inputsEl.appendChild(row);
+      renumberRows();
+    }
+
+    function renumberRows() {
+      [...inputsEl.children].forEach((row, idx) => {
+        row.querySelector(".num").textContent = idx + 1;
+      });
+      addBtn.disabled = inputsEl.children.length >= 10;
+    }
+
+    function renderInputs() {
+      inputsEl.innerHTML = "";
+      items.forEach(item => createInputRow(item));
+    }
+
+    function applyInputs() {
+      const values = [...inputsEl.querySelectorAll('input[type="text"]')]
+        .map(input => input.value.trim())
+        .filter(Boolean);
+
+      if (values.length < 2) {
+        alert("내용이 있는 항목을 최소 2개 입력해 주세요.");
+        return false;
+      }
+
+      items = values.slice(0, 10);
+      drawWheel();
+      saveSettings();
+      return true;
+    }
+
+    function drawWheel() {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) / 2 - 18;
+      const slice = (Math.PI * 2) / items.length;
+
+      ctx.clearRect(0, 0, w, h);
+
+      for (let i = 0; i < items.length; i++) {
+        const start = -Math.PI / 2 + i * slice;
+        const end = start + slice;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, start, end);
+        ctx.closePath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,.82)";
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(start + slice / 2);
+
+        const fontSize = items.length >= 9 ? 28 : items.length >= 7 ? 34 : 40;
+        ctx.font = `900 ${fontSize}px sans-serif`;
+        ctx.fillStyle = "#514953";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "rgba(255,255,255,.78)";
+        ctx.shadowBlur = 5;
+
+        let text = items[i];
+        if (text.length > 10) text = text.slice(0, 10) + "…";
+        ctx.fillText(text, radius - 34, 0);
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,255,255,.9)";
+      ctx.lineWidth = 10;
+      ctx.stroke();
+    }
+
+    function loadVoices() {
+      voices = speechSynthesis.getVoices();
+      const korean = voices.filter(v => v.lang.toLowerCase().startsWith("ko"));
+      const displayVoices = korean.length ? korean : voices;
+
+      voiceSelect.innerHTML = "";
+
+      if (!displayVoices.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "사용 가능한 음성이 없습니다";
+        voiceSelect.appendChild(option);
+        return;
+      }
+
+      displayVoices.forEach((voice) => {
+        const option = document.createElement("option");
+        option.value = voices.indexOf(voice);
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        if (saved.selectedVoiceName) {
+          const matchedIndex = voices.findIndex(
+            voice => voice.name === saved.selectedVoiceName
+          );
+          if (matchedIndex >= 0) {
+            voiceSelect.value = String(matchedIndex);
+          }
+        }
+      } catch (error) {
+        console.warn("저장된 음성을 복원하지 못했습니다.", error);
+      }
+    }
+
+    function speakResult(result) {
+      if (!ttsEnabled.checked || !("speechSynthesis" in window)) return;
+
+      speechSynthesis.cancel();
+
+      const sentence = speechText.value.includes("{결과}")
+        ? speechText.value.replaceAll("{결과}", result)
+        : `${speechText.value} ${result}`;
+
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      utterance.lang = "ko-KR";
+      utterance.rate = Number(rate.value);
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      const selected = voices[Number(voiceSelect.value)];
+      if (selected) utterance.voice = selected;
+
+      speechSynthesis.speak(utterance);
+    }
+
+    function updateHistory(result) {
+      history.unshift(result);
+      history = history.slice(0, 8);
+      renderHistory();
+      saveSettings();
+    }
+
+    function spin() {
+      if (spinning) return;
+      if (!applyInputs()) return;
+
+      spinning = true;
+      spinBtn.disabled = true;
+      resultEl.textContent = "룰렛이 돌아가는 중...";
+
+      const winnerIndex = Math.floor(Math.random() * items.length);
+      const sliceDeg = 360 / items.length;
+      const winnerCenter = winnerIndex * sliceDeg + sliceDeg / 2;
+
+      const extraTurns = 6 + Math.floor(Math.random() * 3);
+      const target = extraTurns * 360 + (360 - winnerCenter);
+
+      rotation += target;
+      canvas.style.transform = `rotate(${rotation}deg)`;
+
+      setTimeout(() => {
+        const winner = items[winnerIndex];
+        resultEl.textContent = `🎉 ${winner}`;
+        speakResult(winner);
+        updateHistory(winner);
+        spinning = false;
+        spinBtn.disabled = false;
+      }, 4900);
+    }
+
+    addBtn.addEventListener("click", () => {
+      if (inputsEl.children.length < 10) {
+        createInputRow("");
+        saveSettings();
+      }
+    });
+
+    inputsEl.addEventListener("input", saveSettings);
+    speechText.addEventListener("input", saveSettings);
+    ttsEnabled.addEventListener("change", saveSettings);
+    voiceSelect.addEventListener("change", saveSettings);
+
+    applyBtn.addEventListener("click", () => {
+      if (applyInputs()) resultEl.textContent = "룰렛에 적용되었습니다!";
+    });
+
+    spinBtn.addEventListener("click", spin);
+
+    rate.addEventListener("input", () => {
+      rateValue.textContent = Number(rate.value).toFixed(1);
+      saveSettings();
+    });
+
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+
+    function testVoice() {
+      if (!("speechSynthesis" in window)) {
+        alert("이 브라우저는 TTS를 지원하지 않습니다. 크롬이나 엣지로 열어 주세요.");
+        return;
+      }
+
+      speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance("음성 테스트입니다. 소리가 들리나요?");
+      utterance.lang = "ko-KR";
+      utterance.rate = Number(rate.value);
+
+      const selected = voices[Number(voiceSelect.value)];
+      if (selected) utterance.voice = selected;
+
+      utterance.onerror = (event) => {
+        alert("TTS 재생에 실패했습니다. 파일을 다운로드한 뒤 크롬 또는 엣지에서 직접 열어 주세요.");
+        console.error("TTS error:", event);
+      };
+
+      speechSynthesis.speak(utterance);
+    }
+
+    testVoiceBtn.addEventListener("click", testVoice);
+    reloadVoicesBtn.addEventListener("click", () => {
+      loadVoices();
+      alert("목소리 목록을 다시 불러왔습니다.");
+    });
+
+    document.addEventListener("click", () => {
+      // 일부 브라우저에서 첫 사용자 입력 후 TTS 엔진이 활성화됩니다.
+      speechSynthesis.resume();
+    }, { once: true });
+
+    window.addEventListener("beforeunload", saveSettings);
+
+    loadSettings();
+    renderInputs();
+    drawWheel();
+    renderHistory();
+    loadVoices();
+  </script>
+</body>
+</html>
